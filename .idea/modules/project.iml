@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module external.linked.project.id="root [file:/C:/Users/bansa/OneDrive/Asztali%20gép/University/DMM2/DMM2-project/]" external.linked.project.path="$MODULE_DIR$/../.." external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_19">
+<module external.linked.project.id="root [file:/Users/eduardailincai33/Documents/GitHub/DMM2-project/]" external.linked.project.path="$MODULE_DIR$/../.." external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_17">
     <output url="file://$MODULE_DIR$/../../target/scala-2.13/classes" />
     <output-test url="file://$MODULE_DIR$/../../target/scala-2.13/test-classes" />
     <exclude-output />
@@ -11,7 +11,15 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="sbt: scala-sdk-2.13.13" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.core:jackson-annotations:2.10.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.core:jackson-core:2.10.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.core:jackson-databind:2.10.5.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.10.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.10.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.typesafe.play:play-functional_2.13:2.9.2:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.typesafe.play:play-json_2.13:2.9.2:jar" level="project" />
     <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.13.13:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-reflect:2.13.13:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scalaj:scalaj-http_2.13:2.4.2:jar" level="project" />
   </component>
 </module>

@@ -1,7 +1,8 @@
+import scalaj.http.{Http, HttpOptions}
+import play.api.libs.json._
 object Main {
-
   def getMenuOption(): Int = {
-    println("What would you like to do?:")
+    println("Weclome to the REPS. What would you like to do?:")
     println("1. Get general info of an energy plant")
     println("2. Check on a sensor's or video's data")
     println("3. Modify something in the system")
@@ -99,6 +100,21 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
+    val apiKey = "d60e8862f9c94ca5b9687c3a7cd9c5af"
+    val url = "https://data.fingrid.fi/api/health"
+    val response = Http(url)
+      .header("Authorization", s"Bearer $apiKey")
+      .option(HttpOptions.readTimeout(10000)) // optional read timeout in milliseconds
+      .asString
+
+    if (response.is2xx) {
+      val json = Json.parse(response.body)
+      // Now you can work with the JSON
+      println(json)
+    } else {
+      println(s"Failed to fetch API: ${response.code}")
+    }
     runMenuOption(getMenuOption())
+
   }
 }
