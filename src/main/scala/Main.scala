@@ -1,5 +1,7 @@
 import scalaj.http.{Http, HttpOptions}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+
+
 object Main {
   def getMenuOption(): Int = {
     println("Weclome to the REPS. What would you like to do?:")
@@ -101,35 +103,28 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val apiKey = "d60e8862f9c94ca5b9687c3a7cd9c5af"
-    val url = "https://data.fingrid.fi/api/health"
+    val url = "https://data.fingrid.fi/api/notifications/active" // Replace with your actual URL
     val response = Http(url)
-      .header("Authorization", s"Bearer $apiKey")
+      .header("x-api-key", apiKey) // Add the API key to the request header
       .option(HttpOptions.readTimeout(10000)) // optional read timeout in milliseconds
       .asString
 
-    println("Status Code: " + response.code) // This will tell you the HTTP status code
-    println("Response Body: " + response.body)
-
     if (response.is2xx) {
-      val json = Json.parse(response.body)
+      val json: JsValue = Json.parse(response.body)
+      println("JSON Response:")
+      println(json)
 
-      def printStatus(component: String): Unit = {
-        (json \ component \ "status").asOpt[String].foreach { status =>
-          println(s"$component status: $status")
-          if (status == "ERROR") {
-            (json \ component \ "message").asOpt[String].foreach { message =>
-              println(s"$component error message: $message")
-            }
-          }
-        }
-      }
-      // Apply the function to each component
-      printStatus("app")
-      printStatus("database")
-      printStatus("network")
-        } else {
+      val id = (json \ "id").asOpt[String]
+      val number = (json \ "number").asOpt[Double]
+      val modifiedAtUtc = (json \ "modifiedAtUtc").asOpt[String]
+
+      println(s"ID: $id")
+      println(s"Number: $number")
+      println(s"Modified At (UTC): $modifiedAtUtc")
+    } else {
       println(s"Failed to fetch API: ${response.code}")
-        }
-      }
+    }
+
     runMenuOption(getMenuOption())
+  }
 }
