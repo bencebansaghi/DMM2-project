@@ -1,5 +1,5 @@
 import scalaj.http.{Http, HttpOptions}
-import play.api.libs.json._
+import play.api.libs.json.Json
 object Main {
   def getMenuOption(): Int = {
     println("Weclome to the REPS. What would you like to do?:")
@@ -107,14 +107,29 @@ object Main {
       .option(HttpOptions.readTimeout(10000)) // optional read timeout in milliseconds
       .asString
 
+    println("Status Code: " + response.code) // This will tell you the HTTP status code
+    println("Response Body: " + response.body)
+
     if (response.is2xx) {
       val json = Json.parse(response.body)
-      // Now you can work with the JSON
-      println(json)
-    } else {
-      println(s"Failed to fetch API: ${response.code}")
-    }
-    runMenuOption(getMenuOption())
 
-  }
+      def printStatus(component: String): Unit = {
+        (json \ component \ "status").asOpt[String].foreach { status =>
+          println(s"$component status: $status")
+          if (status == "ERROR") {
+            (json \ component \ "message").asOpt[String].foreach { message =>
+              println(s"$component error message: $message")
+            }
+          }
+        }
+      }
+      // Apply the function to each component
+      printStatus("app")
+      printStatus("database")
+      printStatus("network")
+        } else {
+      println(s"Failed to fetch API: ${response.code}")
+        }
+      }
+    runMenuOption(getMenuOption())
 }
