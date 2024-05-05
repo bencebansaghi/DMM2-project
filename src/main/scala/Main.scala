@@ -1,11 +1,14 @@
 import scalaj.http.{Http, HttpOptions}
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 
 
 object Main {
+  // Should be put into .env or something
+  private val apiKey = "d60e8862f9c94ca5b9687c3a7cd9c5af"
+
   def getMenuOption(): Int = {
     println("Weclome to the REPS. What would you like to do?:")
-    println("1. Get general info of an energy plant")
+    println("1. Get info of an energy plant")
     println("2. Check on a sensor's or video's data")
     println("3. Modify something in the system")
     println("0. Exit")
@@ -24,6 +27,7 @@ object Main {
     println("1. Solar")
     println("2. Wind")
     println("3. Hydro")
+    println("4. Nuclear")
     println("0. Back")
     print("Enter your choice: ")
     try {
@@ -32,6 +36,7 @@ object Main {
         case 1 => println("Solar energy plant info")
         case 2 => println("Wind energy plant info")
         case 3 => println("Hydro energy plant info")
+        case 4 => nuclearPlantInfo()
         case 0 => runMenuOption(getMenuOption())
         case _ => println("Invalid choice, choose again")
       }
@@ -80,7 +85,7 @@ object Main {
         case _ => println("Invalid choice, choose again")
       }
     } catch {
-      case e: NumberFormatException =>
+      case _: NumberFormatException =>
         println("Please enter a valid integer.")
         modifySystem()
     }
@@ -101,29 +106,58 @@ object Main {
     runMenuOption(getMenuOption())
   }
 
-  def main(args: Array[String]): Unit = {
-    val apiKey = "d60e8862f9c94ca5b9687c3a7cd9c5af"
-    val url = "https://data.fingrid.fi/api/notifications/active" // Replace with your actual URL
-    val response = Http(url)
-      .header("x-api-key", apiKey) // Add the API key to the request header
-      .option(HttpOptions.readTimeout(10000)) // optional read timeout in milliseconds
-      .asString
 
-    if (response.is2xx) {
-      val json: JsValue = Json.parse(response.body)
-      println("JSON Response:")
-      println(json)
+  // Function to make an API request urlEnd: {datasetID}/data?start_time=2021-01-01T00:00:00Z&end_time=2021-01-02T00:00:00Z
+  def makeAPIRequest(urlEnd: String): Either[String, JsValue] = {
+    val urlBase: String = "https://data.fingrid.fi/api/datasets/"
+    try {
+      val url = urlBase + urlEnd
+      val response = Http(url)
+        .header("x-api-key", apiKey)
+        .option(HttpOptions.readTimeout(10000))
+        .asString
 
-      val id = (json \ "id").asOpt[String]
-      val number = (json \ "number").asOpt[Double]
-      val modifiedAtUtc = (json \ "modifiedAtUtc").asOpt[String]
-
-      println(s"ID: $id")
-      println(s"Number: $number")
-      println(s"Modified At (UTC): $modifiedAtUtc")
-    } else {
-      println(s"Failed to fetch API: ${response.code}")
+      if (response.is2xx) {
+        val json: JsValue = Json.parse(response.body)
+        Right(json)
+      } else {
+        Left(s"Failed to fetch API: ${response.code}")
+      }
     }
+    catch {
+      case e: Exception => Left(s"Exception during API request: ${e.getMessage}")
+    }
+  }
+
+  def getOperatingTime(dataID: Int, apiRequest: String => Either[String, JsValue]): Either[String, (String, String)] = {
+    apiRequest(s"$dataID/data") match {
+      case Left(error) => Left(error)
+      case Right(json) =>
+        val lastPageNumber = (json \ "pagination" \ "lastPage").as[Int]
+        apiRequest(s"$dataID/data?page=$lastPageNumber") match {
+          case Left(error) => Left(error)
+          case Right(firstResponse) =>
+            val startTime = ((firstResponse \ "data").last \ "startTime").as[String]
+            apiRequest(s"$dataID/data?page=1") match {
+              case Left(error) => Left(error)
+              case Right(lastResponse) =>
+                val endTime = ((lastResponse \ "data")(0) \ "endTime").as[String]
+                Right(startTime, endTime)
+            }
+        }
+    }
+  }
+
+  def nuclearPlantInfo(): Unit = {
+    println("Nuclear energy plant info:")
+    getOperatingTime(188, makeAPIRequest) match {
+      case Left(error) => println(error)
+      case Right((start, finish)) =>
+        println(s"This has measurements from $start to $finish")
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
 
     runMenuOption(getMenuOption())
   }
