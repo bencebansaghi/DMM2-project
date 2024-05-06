@@ -15,6 +15,7 @@ object Main {
     println("1. Interact with an energy plant")
     println("2. Check on a sensor's or video's data")
     println("3. Modify something in the system")
+    println("4. Get notifications")
     println("0. Exit")
     print("Enter your choice: ")
     try {
@@ -202,6 +203,7 @@ object Main {
       case 1 => energyPlantInfoMenu()
       case 2 => sensorDataMenu()
       case 3 => modifySystem()
+      case 4 => getNotifications()
       case 0 => println("Exiting...")
       sys.exit(0)
       case _ =>
@@ -262,6 +264,37 @@ object Main {
       case Right(sensorData) =>
         println("Sensor data:")
         println(sensorData)
+    }
+  }
+
+  def makeAPIRequestNotifications(urlEnd: String): Either[String, List[JsValue]] = {
+    val urlBase: String = "https://data.fingrid.fi/api/notifications/"
+    try {
+      val url = urlBase + urlEnd
+      val response = Http(url)
+        .header("x-api-key", apiKey)
+        .option(HttpOptions.readTimeout(10000))
+        .asString
+
+      if (response.is2xx) {
+        val json = Json.parse(response.body)
+        Right(json.as[List[JsValue]])
+      } else {
+        Left(s"Failed to fetch API: ${response.code}")
+      }
+    } catch {
+      case e: Exception => Left(s"Exception during API request: ${e.getMessage}")
+    }
+  }
+
+  def getNotifications(): Unit = {
+    val urlEnd = "active"
+    makeAPIRequestNotifications(urlEnd) match {
+      case Right(notifications) =>
+        println("Notifications:")
+        notifications.foreach(println)
+      case Left(error) =>
+        println(s"Error: $error")
     }
   }
 
