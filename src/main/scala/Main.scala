@@ -162,22 +162,32 @@ object Main {
     }
   }
 
+
+  // Case class to represent each modification option, struct for scala
+  case class SystemModifier(
+                             option: Int,
+                             description: String,
+                             action: () => Unit
+                           )
+
+  // Function to handle system modifications
   def modifySystem(): Unit = {
+    val options = List(
+      SystemModifier(1, "Optimize solar panel orientation", optimizeSolarPanelOrientation),
+      SystemModifier(2, "Optimize wind turbine orientation", optimizeWindTurbineOrientation),
+      SystemModifier(3, "Suggest changes in production setup", suggestProductionSetupChanges)
+    )
+
     println("What would you like to modify?")
-    println("1. Optimize solar panel orientation")
-    println("2. Optimize wind turbine orientation")
-    println("3. Suggest changes in production setup")
+    options.foreach(option => println(s"${option.option}. ${option.description}"))
     println("0. Back")
+
     print("Enter your choice: ")
     try {
       val choice = scala.io.StdIn.readInt()
-      choice match {
-        case 1 => optimizeSolarPanelOrientation()
-        case 2 =>
-          println("Optimizing wind turbine orientation...")
-        case 3 =>
-          println("Suggesting changes in production setup...")
-        case 0 => runMenuOption(getMenuOption())
+      options.find(_.option == choice) match {
+        case Some(selectedOption) => selectedOption.action()
+        case None if choice == 0 => runMenuOption(getMenuOption())
         case _ => println("Invalid choice, choose again")
       }
     } catch {
@@ -189,6 +199,39 @@ object Main {
     }
   }
 
+  def optimizeWindTurbineOrientation(): Unit = {
+    println("Optimizing wind turbine orientation...")
+    val optimalAngleInitial = 45 + Random.nextDouble() * (90 - 45)
+    val optimalAngle = BigDecimal(optimalAngleInitial).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+    println(s"The optimal angle for Wind Turbines Today is $optimalAngle degrees, according to the power of the wind.")
+    println("Adjusting the angle of the solar panels...")
+  }
+
+  def suggestProductionSetupChanges(): Unit = {
+    println("Suggesting changes in production setup...")
+    val historicalEnergyData = List(500, 480, 460, 440, 420, 400, 380, 360, 340, 300)
+    val agingEquipmentDetected = detectAgingEquipment(historicalEnergyData)
+    if (agingEquipmentDetected) {
+      println("Based on the analysis of historical data, aging equipment is contributing to decreased energy production.")
+      val recommendations = generateRecommendations()
+      println("Recommendations for production setup changes:")
+      recommendations.foreach(println)
+    } else {
+      println("No significant correlation between aging equipment and energy production decline detected.")
+    }
+  }
+
+  def detectAgingEquipment(data: List[Int]): Boolean = {
+    val averageBefore = data.take(data.size / 2).sum / (data.size / 2)
+    val averageAfter = data.drop(data.size / 2).sum / (data.size / 2)
+    val declinePercentage = (averageBefore - averageAfter).toDouble / averageBefore * 100
+    declinePercentage > 10
+  }
+
+  def generateRecommendations(): List[String] = {
+    val recommendations = List("Replace aging turbines with newer models.", "Upgrade solar panel components.", "Optimize maintenance schedule.")
+    Random.shuffle(recommendations).take(2)
+  }
   def optimizeSolarPanelOrientation(): Unit = {
     println("Optimizing solar panel orientation...")
     val optimalAngleInitial = 45 + Random.nextDouble() * (50 - 45)
