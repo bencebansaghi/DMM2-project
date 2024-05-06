@@ -3,6 +3,8 @@ import scalaj.http.{Http, HttpOptions}
 
 import java.awt.Desktop
 import java.net.URI
+import scala.util.Random
+
 
 object Main {
   // Should be put into .env or something
@@ -161,17 +163,19 @@ object Main {
 
   def modifySystem(): Unit = {
     println("What would you like to modify?")
-    println("1. Add a new task")
-    println("2. List all tasks")
-    println("3. Modify a task")
+    println("1. Optimize solar panel orientation")
+    println("2. Optimize wind turbine orientation")
+    println("3. Suggest changes in production setup")
     println("0. Back")
     print("Enter your choice: ")
     try {
       val choice = scala.io.StdIn.readInt()
       choice match {
-        case 1 => println("Add a new task")
-        case 2 => println("List all tasks")
-        case 3 => println("Modify a task")
+        case 1 => optimizeSolarPanelOrientation()
+        case 2 =>
+          println("Optimizing wind turbine orientation...")
+        case 3 =>
+          println("Suggesting changes in production setup...")
         case 0 => runMenuOption(getMenuOption())
         case _ => println("Invalid choice, choose again")
       }
@@ -179,8 +183,19 @@ object Main {
       case _: NumberFormatException =>
         println("Please enter a valid integer.")
         modifySystem()
+      case _: Exception =>
+        println("An error occurred.")
     }
   }
+
+  def optimizeSolarPanelOrientation(): Unit = {
+    println("Optimizing solar panel orientation...")
+    val optimalAngleInitial = 45 + Random.nextDouble() * (50 - 45)
+    val optimalAngle = BigDecimal(optimalAngleInitial).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+    println(s"The optimal angle for solar panels Today is $optimalAngle degrees, according to the movement of the Sun.")
+    println("Adjusting the angle of the solar panels...")
+  }
+
 
   def runMenuOption(choice:Int){
     choice match{
@@ -328,7 +343,6 @@ object Main {
 
 
   def main(args: Array[String]): Unit = {
-
     runMenuOption(getMenuOption())
   }
 }
