@@ -2,6 +2,7 @@ import scalaj.http.{Http, HttpOptions}
 import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 
 
+
 object Main {
   // Should be put into .env or something
   private val apiKey = "d60e8862f9c94ca5b9687c3a7cd9c5af"
@@ -36,7 +37,12 @@ object Main {
         case 1 => println("Solar energy plant info")
         case 2 => println("Wind energy plant info")
         case 3 => println("Hydro energy plant info")
-        case 4 => nuclearPlantInfo()
+        case 4 =>
+          getNuclearPlantInfo(188) match {
+            case Left(error) => println(error)
+            case Right(list) =>
+              printCalculations(list)
+          }
         case 0 => runMenuOption(getMenuOption())
         case _ => println("Invalid choice, choose again")
       }
@@ -47,6 +53,20 @@ object Main {
     }
   }
 
+  def printCalculations(data: List[Double]){
+    makeCalculations(data) match {
+      case Left(error) => println(error)
+      case Right(result) =>
+        println("Calculations for the specified time period:")
+        println("Total measurements: " + data.length)
+        println(s"Total: ${"%.2f".format((result \ "total").as[Double])}")
+        println(s"Average: ${"%.2f".format((result \ "average").as[Double])}")
+        println(s"Median: ${"%.2f".format((result \ "median").as[Double])}")
+        println(s"Mode: ${"%.2f".format((result \ "mode").as[Double])}")
+        println(s"Range: ${"%.2f".format((result \ "range").as[Double])}")
+        println(s"Midrange: ${"%.2f".format((result \ "midrange").as[Double])}")
+    }
+  }
   def sensorVideoData(): Unit = {
     println("Which data would you like to check?")
     println("1. Sensor data")
@@ -148,14 +168,67 @@ object Main {
     }
   }
 
-  def nuclearPlantInfo(): Unit = {
-    println("Nuclear energy plant info:")
-    getOperatingTime(188, makeAPIRequest) match {
-      case Left(error) => println(error)
-      case Right((start, finish)) =>
-        println(s"This has measurements from $start to $finish")
+
+
+  def makeCalculations(data: List[Double]): Either[String, JsValue] = {
+    if (data.isEmpty) {
+      Left("No data to calculate")
+    } else {
+      val total = data.sum
+      val average = total / data.length
+      val sortedData = data.sorted
+      val median = if (data.length % 2 == 0) {
+        val mid = data.length / 2
+        (sortedData(mid - 1) + sortedData(mid)) / 2
+      } else {
+        sortedData(data.length / 2)
+      }
+      val mode = sortedData.groupBy(identity).maxBy(_._2.size)._1
+      val range = sortedData.max - sortedData.min
+      val midrange = (sortedData.max + sortedData.min) / 2
+      val result = Json.obj(
+        "total" -> total,
+        "average" -> average,
+        "median" -> median,
+        "mode" -> mode,
+        "range" -> range,
+        "midrange" -> midrange
+      )
+      Right(result)
     }
   }
+
+
+  def getNuclearPlantInfo(dataID:Int): Either[String, List[Double]] = {
+    println("Nuclear energy plant info:")
+    getOperatingTime(dataID, makeAPIRequest) match {
+      case Left(error) => Left(error)
+      case Right((start, finish)) =>
+        println(s"This nuclear plant has measurements from $start to $finish")
+        println("Enter the start date in the same format as the measurements:")
+        val startDate: String = scala.io.StdIn.readLine().strip()
+        println("Enter the end date in the same format as the measurements:")
+        val endDate: String = scala.io.StdIn.readLine().strip()
+        println(startDate, endDate)
+        val urlEnd = s"$dataID/data?startTime=$startDate&endTime=$endDate"
+        Right(goThroughPages(urlEnd, makeAPIRequest, List()))
+    }
+  }
+
+  def goThroughPages(baseUrlEnd: String, apiRequest: String => Either[String, JsValue],list:List[Double],pageNum: Int=1): List[Double]={
+    apiRequest(s"$baseUrlEnd&page=$pageNum") match {
+      case Left(error) => list
+      case Right(json) =>
+        val measurements = (json \ "data").as[List[JsObject]]
+        if (measurements.isEmpty) {
+          list
+        } else {
+          val values = measurements.map(m => (m \ "value").as[Double])
+          goThroughPages(baseUrlEnd, apiRequest, list ++ values, pageNum + 1)
+        }
+    }
+  }
+
 
   def main(args: Array[String]): Unit = {
 
