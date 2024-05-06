@@ -1,13 +1,15 @@
+//Eduard Ailincai
+//Bence Bansaghi
+//Delia Fliscu
+
 import play.api.libs.json.{JsObject, JsValue, Json}
 import scalaj.http.{Http, HttpOptions}
 
 import java.awt.Desktop
 import java.net.URI
 import scala.util.Random
-
-
 object Main {
-  // Should be put into .env or something
+  // Should be put into .env or something else
   private val apiKey = "84e59ba686b84614b261753d7bddca70"
 
   def getMenuOption(): Int = {
