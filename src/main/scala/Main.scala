@@ -83,7 +83,7 @@ object Main {
         case 2 =>
           energyPlantOperations(181,"wind")
         case 3 =>
-          energyPlantOperations(187,"hydro")
+          energyPlantOperations(191,"hydro")
         case 4 =>
           energyPlantOperations(182,"nuclear")
         case 0 => runMenuOption(getMenuOption())
@@ -104,7 +104,7 @@ object Main {
         val organization = (json \ "organization").as[String]
         val nameEn = (json \ "nameEn").as[String]
         val descriptionEn = (json \ "descriptionEn").as[String]
-        val unitEn = (json \ "UnitEn").as[String]
+        val unitEn = (json \ "unitEn").as[String]
         println(s"$plantName energy plant info:")
         println(s"Status: $status")
         println(s"Organization: $organization")
