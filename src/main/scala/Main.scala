@@ -8,7 +8,7 @@ object Main {
   private val apiKey = "d60e8862f9c94ca5b9687c3a7cd9c5af"
 
   def getMenuOption(): Int = {
-    println("Weclome to the REPS. What would you like to do?:")
+    println("Welcome to the REPS. What would you like to do?:")
     println("1. Get info of an energy plant")
     println("2. Check on a sensor's or video's data")
     println("3. Modify something in the system")
@@ -34,9 +34,24 @@ object Main {
     try {
       val choice = scala.io.StdIn.readInt()
       choice match {
-        case 1 => println("Solar energy plant info")
-        case 2 => println("Wind energy plant info")
-        case 3 => println("Hydro energy plant info")
+        case 1 =>
+          getSolarPlantInfo(248) match {
+            case Left(error) => println(error)
+            case Right(list) =>
+              printCalculations(list)
+          }
+        case 2 =>
+          getWindPlantInfo(181) match {
+            case Left(error) => println(error)
+            case Right(list) =>
+              printCalculations(list)
+          }
+        case 3 =>
+          getHydroPlantInfo(191) match {
+            case Left(error) => println(error)
+            case Right(list) =>
+              printCalculations(list)
+          }
         case 4 =>
           getNuclearPlantInfo(188) match {
             case Left(error) => println(error)
@@ -210,14 +225,15 @@ object Main {
         println("Enter the end date in the same format as the measurements:")
         val endDate: String = scala.io.StdIn.readLine().strip()
         println(startDate, endDate)
-        val urlEnd = s"$dataID/data?startTime=$startDate&endTime=$endDate"
+        val urlEnd = s"$dataID/data?startTime=$startDate&endTime=$endDate&pageSize=20000"
         Right(goThroughPages(urlEnd, makeAPIRequest, List()))
     }
   }
 
   def goThroughPages(baseUrlEnd: String, apiRequest: String => Either[String, JsValue],list:List[Double],pageNum: Int=1): List[Double]={
     apiRequest(s"$baseUrlEnd&page=$pageNum") match {
-      case Left(error) => list
+      case Left(error) => println(error)
+        list
       case Right(json) =>
         val measurements = (json \ "data").as[List[JsObject]]
         if (measurements.isEmpty) {
@@ -226,6 +242,54 @@ object Main {
           val values = measurements.map(m => (m \ "value").as[Double])
           goThroughPages(baseUrlEnd, apiRequest, list ++ values, pageNum + 1)
         }
+    }
+  }
+
+  def getHydroPlantInfo(dataID:Int): Either[String, List[Double]] = {
+    println("Hydro energy plant info:")
+    getOperatingTime(dataID, makeAPIRequest) match {
+      case Left(error) => Left(error)
+      case Right((start, finish)) =>
+        println(s"This hydro plant has measurements from $start to $finish")
+        println("Enter the start date in the same format as the measurements:")
+        val startDate: String = scala.io.StdIn.readLine().strip()
+        println("Enter the end date in the same format as the measurements:")
+        val endDate: String = scala.io.StdIn.readLine().strip()
+        println(startDate, endDate)
+        val urlEnd = s"$dataID/data?startTime=$startDate&endTime=$endDate&pageSize=20000"
+        Right(goThroughPages(urlEnd, makeAPIRequest, List()))
+    }
+  }
+
+  def getWindPlantInfo(dataID:Int): Either[String, List[Double]] = {
+    println("Wind energy plant info:")
+    getOperatingTime(dataID, makeAPIRequest) match {
+      case Left(error) => Left(error)
+      case Right((start, finish)) =>
+        println(s"This wind plant has measurements from $start to $finish")
+        println("Enter the start date in the same format as the measurements:")
+        val startDate: String = scala.io.StdIn.readLine().strip()
+        println("Enter the end date in the same format as the measurements:")
+        val endDate: String = scala.io.StdIn.readLine().strip()
+        println(startDate, endDate)
+        val urlEnd = s"$dataID/data?startTime=$startDate&endTime=$endDate&pageSize=20000"
+        Right(goThroughPages(urlEnd, makeAPIRequest, List()))
+    }
+  }
+
+  def getSolarPlantInfo(dataID:Int): Either[String, List[Double]] = {
+    println("Solar energy plant info:")
+    getOperatingTime(dataID, makeAPIRequest) match {
+      case Left(error) => Left(error)
+      case Right((start, finish)) =>
+        println(s"This solar plant has measurements from $start to $finish")
+        println("Enter the start date in the same format as the measurements:")
+        val startDate: String = scala.io.StdIn.readLine().strip()
+        println("Enter the end date in the same format as the measurements:")
+        val endDate: String = scala.io.StdIn.readLine().strip()
+        println(startDate, endDate)
+        val urlEnd = s"$dataID/data?startTime=$startDate&endTime=$endDate&pageSize=20000"
+        Right(goThroughPages(urlEnd, makeAPIRequest, List()))
     }
   }
 
