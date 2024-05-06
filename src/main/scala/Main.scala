@@ -1,7 +1,8 @@
+import play.api.libs.json.{JsObject, JsValue, Json}
 import scalaj.http.{Http, HttpOptions}
-import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 
-
+import java.awt.Desktop
+import java.net.URI
 
 object Main {
   // Should be put into .env or something
@@ -67,6 +68,35 @@ object Main {
 
     }
   }
+
+  def sensorDataMenu(): Unit = {
+    println("Which data would you like to check?")
+    println("1. Health of the production system (sensor data)")
+    println("2. Surveillance videos")
+    println("0. Back")
+    print("Enter your choice: ")
+    try {
+      val choice = scala.io.StdIn.readInt()
+      choice match {
+        case 1 =>
+          println("Fetching sensor data related to the health of the production system...")
+          fetchSensorData()
+
+        case 2 =>
+          println("Fetching surveillance videos...")
+          val surveillanceVideoLink = "https://www.youtube.com/watch?v=RaRc0oHBk5M"
+          Desktop.getDesktop.browse(new URI(surveillanceVideoLink))
+
+        case 0 => runMenuOption(getMenuOption())
+        case _ => println("Invalid choice, choose again")
+      }
+    } catch {
+      case e: NumberFormatException =>
+        println("Please enter a valid integer.")
+        sensorDataMenu()
+    }
+  }
+
   def energyPlantInfoMenu(): Unit = {
     println("Which energy plant would you like to interact with?")
     println("1. Solar")
@@ -128,26 +158,6 @@ object Main {
         println(s"Midrange: ${"%.2f".format((result \ "midrange").as[Double])}")
     }
   }
-  def sensorVideoData(): Unit = {
-    println("Which data would you like to check?")
-    println("1. Sensor data")
-    println("2. Video data")
-    println("0. Back")
-    print("Enter your choice: ")
-    try {
-      val choice = scala.io.StdIn.readInt()
-      choice match {
-        case 1 => println("Sensor data")
-        case 2 => println("Video data")
-        case 0 => runMenuOption(getMenuOption())
-        case _ => println("Invalid choice, choose again")
-      }
-    } catch {
-      case e: NumberFormatException =>
-        println("Please enter a valid integer.")
-        sensorVideoData()
-    }
-  }
 
   def modifySystem(): Unit = {
     println("What would you like to modify?")
@@ -175,7 +185,7 @@ object Main {
   def runMenuOption(choice:Int){
     choice match{
       case 1 => energyPlantInfoMenu()
-      case 2 => sensorVideoData()
+      case 2 => sensorDataMenu()
       case 3 => modifySystem()
       case 0 => println("Exiting...")
       sys.exit(0)
@@ -187,7 +197,7 @@ object Main {
     runMenuOption(getMenuOption())
   }
 
-
+  // We will use this makeAPIRequest to work for calculations, and a separate call for the health status
   // Function to make an API request urlEnd: {datasetID}/data?start_time=2021-01-01T00:00:00Z&end_time=2021-01-02T00:00:00Z
   def makeAPIRequest(urlEnd: String): Either[String, JsValue] = {
     val urlBase: String = "https://data.fingrid.fi/api/datasets/"
@@ -207,6 +217,36 @@ object Main {
     }
     catch {
       case e: Exception => Left(s"Exception during API request: ${e.getMessage}")
+    }
+  }
+
+  def makeAPIRequestHealth(urlEnd: String): Either[String, JsValue] = {
+    val urlBase: String = "https://data.fingrid.fi/api/"
+    try {
+      val url = urlBase + urlEnd
+      val response = Http(url)
+        .header("x-api-key", apiKey)
+        .option(HttpOptions.readTimeout(10000))
+        .asString
+
+      if (response.is2xx) {
+        val json: JsValue = Json.parse(response.body)
+        Right(json)
+      } else {
+        Left(s"Failed to fetch API: ${response.code}")
+      }
+    }
+    catch {
+      case e: Exception => Left(s"Exception during API request: ${e.getMessage}")
+    }
+  }
+  def fetchSensorData(): Unit = {
+    val urlEnd = "health"
+    makeAPIRequestHealth(urlEnd) match {
+      case Left(error) => println(error)
+      case Right(sensorData) =>
+        println("Sensor data:")
+        println(sensorData)
     }
   }
 
@@ -271,7 +311,6 @@ object Main {
         }
     }
   }
-
   def getPlantDataFromTimePeriod(dataID: Int, plantName: String): Either[String,List[JsValue]] = {
     println(s"$plantName energy plant info:")
     getOperatingTime(dataID, makeAPIRequest) match {
